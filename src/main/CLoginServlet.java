@@ -2,8 +2,6 @@ package main;
 
 
 import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
 
 import javax.servlet.ServletException;
 import javax.servlet.ServletInputStream;
@@ -12,17 +10,21 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
+import database.CConnector;
 
 
 
-@WebServlet("/DatabaseConnectionServlet")
-public class DatabaseConnectionServlet extends HttpServlet {
+@WebServlet("/CLoginServlet")
+public class CLoginServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
        
-    public DatabaseConnectionServlet() {
+    public CLoginServlet() {
     	super();
     }
 
@@ -35,6 +37,10 @@ public class DatabaseConnectionServlet extends HttpServlet {
 		//doGet(request, response);		
 		try 
 		{	
+			System.out.println("Login");
+			
+			CConnector connector = new CConnector();
+			
 			int requestLength = request.getContentLength();
 			byte[] input = new byte[requestLength];
 			ServletInputStream servletInput = request.getInputStream();
@@ -46,45 +52,23 @@ public class DatabaseConnectionServlet extends HttpServlet {
 			}
 						
 			String receivedString = new String(input);
+			JsonObject obj = new JsonParser().parse(receivedString).getAsJsonObject();			
 			
-			String json = "{\"received\": \"ok\"}";
+			
+			
+			JSONObject json = connector.login(obj.get("username").getAsString(), obj.get("userpassword").getAsString());
+			
+			
 	        response.setContentType("application/json");
 	        response.setCharacterEncoding("UTF-8");
-	        response.getWriter().write(json);
+	        
+	        json.write(response.getWriter());
+	        	        
 	        response.getWriter().flush();
 	        response.getWriter().close();
-			
-			/*response.setStatus(HttpServletResponse.SC_OK);
-			response.setCharacterEncoding("UTF-8");
-			response.addHeader("content-type", "application/json");
-			//setContentType("application/json");
-
-			OutputStreamWriter writer = new OutputStreamWriter(response.getOutputStream());
-			
-			writer.write("{\"return\":\"ok\"}");
-			writer.flush();
-			writer.close();*/
-			
-/*			String subStr = receivedString.substring(8, receivedString.length());			
-			String[] latLongStrings = subStr.split(",");
-			
-			Double longitude = Double.valueOf(latLongStrings[0].substring(10));
-			Double latitude = Double.valueOf(latLongStrings[1].substring(10));
-			
-			if(latLongStrings.length<=3)
-			{
-				range = 1000;
-			}
-			else 
-			{
-				range = Integer.valueOf(latLongStrings[3]);
-			}*/
-			
-			//System.out.println("long: "+longitude + "   lat: "+latitude );
-			
 				
 		}
-		catch (IOException e) {
+		catch (IOException | JSONException e) {
 			try
 			{
                 response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
